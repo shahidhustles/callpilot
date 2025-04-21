@@ -98,7 +98,6 @@ async function fetchAvailableSlots(
   }
 }
 
-// POST method to fetch available slots
 export async function POST(request: Request): Promise<Response> {
   try {
     let days = 7;
@@ -126,10 +125,17 @@ export async function POST(request: Request): Promise<Response> {
       JSON.stringify({
         status: "success",
         slots: formattedSlots,
+        parameters: { days, duration } // Include the used parameters in the response
       }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Add CORS headers
+          "Access-Control-Allow-Origin": "*", // Allow requests from any origin
+          "Access-Control-Allow-Methods": "POST, OPTIONS", // Allow POST and OPTIONS methods
+          "Access-Control-Allow-Headers": "Content-Type, Authorization" // Allow these headers
+        }
       }
     );
   } catch (error) {
@@ -141,13 +147,14 @@ export async function POST(request: Request): Promise<Response> {
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Add CORS headers to error responses as well
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
       }
     );
   }
 }
-
-// Remove or comment out the GET function since we're now using POST
-// export async function GET(): Promise<Response> {
-//   // ...
-// }
