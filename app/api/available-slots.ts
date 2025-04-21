@@ -47,8 +47,8 @@ async function fetchAvailableSlots(): Promise<Slot[]> {
   end.setDate(now.getDate() + 7);
   const endTime = end.toISOString();
 
-  const eventTypeId = 1409993;
-  const eventTypeSlug = "ai-voice-agent-discovery";
+  const eventTypeId = 2317091;
+  const eventTypeSlug = "ai-voice-agent-demo-meeting";
   const duration = 30;
   const url = `https://api.cal.com/v2/slots/available?startTime=${encodeURIComponent(
     startTime
