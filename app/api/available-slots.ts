@@ -1,4 +1,3 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import fetch from "node-fetch";
 
 const apiToken = process.env.CALCOM_API_KEY;
@@ -88,16 +87,7 @@ async function fetchAvailableSlots(): Promise<Slot[]> {
   }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-): Promise<void> {
-
-  if (req.method !== "GET") {
-    res.status(405).json({ status: "error", message: "Method not allowed" });
-    return;
-  }
-
+export default async function GET(): Promise<Response> {
   try {
     const allAvailableSlots = await fetchAvailableSlots();
     const formattedSlots: FormattedSlot[] = allAvailableSlots.map((slot) => ({
@@ -105,10 +95,24 @@ export default async function handler(
       formattedTime: formatToConversationalDate(slot.time),
     }));
 
-    res.status(200).json({ status: "success", slots: formattedSlots });
+    return new Response(
+      JSON.stringify({ status: "success", slots: formattedSlots }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: "error", message: "Failed to fetch slots", error });
+    return new Response(
+      JSON.stringify({
+        status: "error",
+        message: "Failed to fetch slots",
+        error,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }
