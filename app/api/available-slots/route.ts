@@ -24,7 +24,15 @@ interface CalComApiResponse {
 
 function formatToConversationalDate(dateString: string): string {
   try {
+    // Parse the Indian time string into a proper Date object
+    // Example format: "4/21/2025, 3:30:00 PM"
     const date = new Date(dateString);
+    
+    if (isNaN(date.getTime())) {
+      console.error(`Invalid date string format: ${dateString}`);
+      return "Invalid Date";
+    }
+    
     const options: Intl.DateTimeFormatOptions = {
       weekday: "long",
       hour: "numeric",
@@ -70,11 +78,12 @@ async function fetchAvailableSlots(): Promise<Slot[]> {
       const slotsInIndianTime: Slot[] = [];
       for (const date in data.data.slots) {
         data.data.slots[date].forEach((slot: { time: string }) => {
-          const utcDate = new Date(slot.time);
-          const indianTime = utcDate.toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
+          // Keep the original UTC time in the slot.time field
+          // This ensures we have a proper ISO date string for formatting
+          slotsInIndianTime.push({ 
+            date, 
+            time: slot.time // Keep as ISO string
           });
-          slotsInIndianTime.push({ date, time: indianTime });
         });
       }
       return slotsInIndianTime;
@@ -87,7 +96,7 @@ async function fetchAvailableSlots(): Promise<Slot[]> {
   }
 }
 
-export default async function GET(): Promise<Response> {
+export async function GET(): Promise<Response> {
   try {
     const allAvailableSlots = await fetchAvailableSlots();
     const formattedSlots: FormattedSlot[] = allAvailableSlots.map((slot) => ({
