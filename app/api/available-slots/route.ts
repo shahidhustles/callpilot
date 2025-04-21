@@ -24,8 +24,7 @@ interface CalComApiResponse {
 
 function formatToConversationalDate(dateString: string): string {
   try {
-    // Parse the Indian time string into a proper Date object
-    // Example format: "4/21/2025, 3:30:00 PM"
+
     const date = new Date(dateString);
 
     if (isNaN(date.getTime())) {
@@ -80,11 +79,9 @@ async function fetchAvailableSlots(
       const slotsInIndianTime: Slot[] = [];
       for (const date in data.data.slots) {
         data.data.slots[date].forEach((slot: { time: string }) => {
-          // Keep the original UTC time in the slot.time field
-          // This ensures we have a proper ISO date string for formatting
           slotsInIndianTime.push({
             date,
-            time: slot.time, // Keep as ISO string
+            time: slot.time,
           });
         });
       }
@@ -125,17 +122,16 @@ export async function POST(request: Request): Promise<Response> {
       JSON.stringify({
         status: "success",
         slots: formattedSlots,
-        parameters: { days, duration } // Include the used parameters in the response
+        parameters: { days, duration },
       }),
       {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          // Add CORS headers
-          "Access-Control-Allow-Origin": "*", // Allow requests from any origin
-          "Access-Control-Allow-Methods": "POST, OPTIONS", // Allow POST and OPTIONS methods
-          "Access-Control-Allow-Headers": "Content-Type, Authorization" // Allow these headers
-        }
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
       }
     );
   } catch (error) {
@@ -149,12 +145,24 @@ export async function POST(request: Request): Promise<Response> {
         status: 500,
         headers: {
           "Content-Type": "application/json",
-          // Add CORS headers to error responses as well
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        }
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
       }
     );
   }
+}
+
+// Add OPTIONS handler for CORS preflight requests
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204, // No content
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
 }
