@@ -27,12 +27,12 @@ function formatToConversationalDate(dateString: string): string {
     // Parse the Indian time string into a proper Date object
     // Example format: "4/21/2025, 3:30:00 PM"
     const date = new Date(dateString);
-    
+
     if (isNaN(date.getTime())) {
       console.error(`Invalid date string format: ${dateString}`);
       return "Invalid Date";
     }
-    
+
     const options: Intl.DateTimeFormatOptions = {
       weekday: "long",
       hour: "numeric",
@@ -47,16 +47,18 @@ function formatToConversationalDate(dateString: string): string {
   }
 }
 
-async function fetchAvailableSlots(): Promise<Slot[]> {
+async function fetchAvailableSlots(
+  daysAhead: number = 7,
+  duration: number = 30
+): Promise<Slot[]> {
   const now = new Date();
   const startTime = now.toISOString();
   const end = new Date(now);
-  end.setDate(now.getDate() + 7);
+  end.setDate(now.getDate() + daysAhead);
   const endTime = end.toISOString();
 
   const eventTypeId = 2317091;
   const eventTypeSlug = "ai-voice-agent-demo-meeting";
-  const duration = 30;
   const url = `https://api.cal.com/v2/slots/available?startTime=${encodeURIComponent(
     startTime
   )}&endTime=${encodeURIComponent(
@@ -80,9 +82,9 @@ async function fetchAvailableSlots(): Promise<Slot[]> {
         data.data.slots[date].forEach((slot: { time: string }) => {
           // Keep the original UTC time in the slot.time field
           // This ensures we have a proper ISO date string for formatting
-          slotsInIndianTime.push({ 
-            date, 
-            time: slot.time // Keep as ISO string
+          slotsInIndianTime.push({
+            date,
+            time: slot.time, // Keep as ISO string
           });
         });
       }
@@ -96,16 +98,35 @@ async function fetchAvailableSlots(): Promise<Slot[]> {
   }
 }
 
-export async function GET(): Promise<Response> {
+// POST method to fetch available slots
+export async function POST(request: Request): Promise<Response> {
   try {
-    const allAvailableSlots = await fetchAvailableSlots();
+    let days = 7;
+    let duration = 30;
+
+    try {
+      const body = await request.json();
+      if (body.days !== undefined) {
+        days = parseInt(body.days, 10) || 7;
+      }
+      if (body.duration !== undefined) {
+        duration = parseInt(body.duration, 10) || 30;
+      }
+    } catch (e) {
+      console.log("No valid JSON body provided, using default values", e);
+    }
+
+    const allAvailableSlots = await fetchAvailableSlots(days, duration);
     const formattedSlots: FormattedSlot[] = allAvailableSlots.map((slot) => ({
       ...slot,
       formattedTime: formatToConversationalDate(slot.time),
     }));
 
     return new Response(
-      JSON.stringify({ status: "success", slots: formattedSlots }),
+      JSON.stringify({
+        status: "success",
+        slots: formattedSlots,
+      }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -125,3 +146,8 @@ export async function GET(): Promise<Response> {
     );
   }
 }
+
+// Remove or comment out the GET function since we're now using POST
+// export async function GET(): Promise<Response> {
+//   // ...
+// }
